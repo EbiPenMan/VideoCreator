@@ -261,8 +261,12 @@ export class VideoGenerationService {
             promises.push(this.writeImageStream(imagePath, streamImage));
             promises.push(this.writeAudioStream(audioPath, textAudio));
 
-            filePathList.push(imagePath);
-            filePathList.push(audioPath);
+
+            filePathList.push({
+                image: imagePath,
+                audio: audioPath
+            });
+
 
             slideNumber++;
 
@@ -275,8 +279,14 @@ export class VideoGenerationService {
             const filePathListOutputPath = path.join(__dirname, '..', 'output-raw', `p1_filePath.txt`);
             await this.writeFile(filePathList, filePathListOutputPath);
 
+
+
+            console.log('writeFile processed!');
+
+
+            
             const videoOutputPath = path.join(__dirname, '..', 'output-raw', `p1_finalVideo.mp4`);
-            await this.createVideoFromPhotosAndAudio(filePathListOutputPath ,videoOutputPath);
+            await this.createVideoFromPhotosAndAudio(filePathList,filePathListOutputPath, videoOutputPath);
 
             console.log('Video creation end!');
             return output_video_file;
@@ -292,29 +302,45 @@ export class VideoGenerationService {
     }
 
     private async writeFile(filePathList, outputFilePath) {
-        const fileContent = filePathList.reduce((content, filePath, index) => {
-            content += `file '${filePath}'\n`;
-            return content;
-        }, '');
-
+        const fileContent = filePathList.map(({ image, audio }) => `file '${image}'\nfile '${audio}'`).join('\n');
         await fs.promises.writeFile(outputFilePath, fileContent);
     };
 
-    private async createVideoFromPhotosAndAudio(fileListPath, outputFilePath): Promise<any> {
-        const command = `ffmpeg -y -f concat -safe 0 -i ${fileListPath} -vf "scale=1920:1080,format=yuv420p" -af "volume=2" ${outputFilePath}`;
-        console.log('command: ' + command);
+    private async createVideoFromPhotosAndAudio(filePathList,fileListPath, outputFilePath): Promise<any> {
 
         return new Promise((resolve, reject) => {
-            exec(command, (error, stdout, stderr) => {
-                if (error) {
-                    reject();
-                    console.error(`Error creating video: ${error}`);
-                } else {
-                    resolve("Video creation complete!");
-                    console.log('Video creation complete!');
+            let command = ffmpeg();
+            
+            for (let i = 0; i < filePathList.length; i++) {
+              command.input(filePathList[i]);
+            }
+        
+            command.input(fileListPath)
+              .complexFilter([
+                {
+                  filter: 'concat',
+                  options: {
+                    n: filePathList.length,
+                    v: 1,
+                    a: 1,
+                    [filePathList.length]: {
+                      filter: 'scale',
+                      options: '1920:1080',
+                      outputs: '[v_scaled]'
+                    }
+                  },
+                  outputs: ['[v]', '[a]']
                 }
-            });
-        });
+              ])
+              .output(outputFilePath)
+              .on('end', () => {
+                resolve('Video creation complete!');
+              })
+              .on('error', (err) => {
+                reject(err);
+              })
+              .run();
+          });
     };
 
     private async writeImageStream(filePath, streamImage): Promise<any> {

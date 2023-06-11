@@ -1,0 +1,71 @@
+{
+    "output_video_width": 640,
+    "output_video_height": 580,
+    "output_video_duration_in_seconds": 30,
+    "output_video_frame_rate": 10,
+    "output_video_file": "assets/output.mp4",
+    "backgroun_image_path": "http://localhost:3000/assets/bg1.png",
+    "backgroun_image_resize_option": "shrink", 
+    "backgroun_audio_path": "http://localhost:3000/assets/bg.mp3",
+    "backgroun_audio_volume": 0.3, 
+    "slides": [
+        {
+            "audio_text_path": "http://localhost:3000/assets/text_audio_path_1.mp3",
+            "text_strings": [
+                {
+                    "text_string": "I want ",
+                    "text_color": "#323fff",
+                    "text_font": "Arial",
+                    "text_fontSize": 25,
+                    "text_is_italic": true,
+                    "text_is_underline": true
+                },
+                {
+                    "text_string": "learn",
+                    "text_color": "#ff00c0",
+                    "text_font": "Tahoma",
+                    "text_fontSize": 45,
+                    "text_is_bold": true
+                },
+                {
+                    "text_string": " English",
+                    "text_color": "#cf00c0",
+                    "text_font": "Arial",
+                    "text_fontSize": 25,
+                    "text_is_underline": true
+                }
+            ],
+            "text_block_x_position": 100,
+            "text_block_y_position": 100
+        },
+        {
+            "audio_text_path": "http://localhost:3000/assets/text_audio_path_2.mp3",
+            "text_strings": [
+                {
+                    "text_string": "__Book__",
+                    "text_color": "#ff00c0",
+                    "text_font": "Tahoma",
+                    "text_fontSize": 45,
+                    "text_is_bold": true
+                },
+                {
+                    "text_string": " is the ",
+                    "text_color": "#323fff",
+                    "text_font": "Arial",
+                    "text_fontSize": 25,
+                    "text_is_italic": true,
+                    "text_is_underline": true
+                },
+                {
+                    "text_string": " English word.",
+                    "text_color": "#cf00c0",
+                    "text_font": "Arial",
+                    "text_fontSize": 25,
+                    "text_is_underline": true
+                }
+            ],
+            "text_block_x_position": 100,
+            "text_block_y_position": 100
+        }
+    ]
+}

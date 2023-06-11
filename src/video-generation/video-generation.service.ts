@@ -200,6 +200,11 @@ export class VideoGenerationService {
         // Generate video frames for each slide
         let videoDuration = 0;
         let slideNumber = 0;
+
+
+        let promises = [];
+        let filePathList = [];
+
         for (const slide of slides) {
             const { audio_text_path, text_strings, text_block_x_position, text_block_y_position } = slide;
 
@@ -249,144 +254,87 @@ export class VideoGenerationService {
             // Create a readable stream from the canvas image data
             ctx.patternQuality = 'best';
             ctx.antialias = "subpixel";
-            const streamImage = canvas.toBuffer();
-            
-            // const frameImageData = canvas.toBuffer();
-            // const frameStream = new Readable();
-            // frameStream.push(frameImageData);
-            // frameStream.push(null); // Signal the end of the stream
+            const streamImage = canvas.toBuffer('image/png');
 
-            // Create a separate FFmpeg instance for each slide
-            const ffmpegPathSlideVideo = ffmpeg();
-            const outputPath = path.join(__dirname, '..', 'output-raw', `slide_${slides.indexOf(slide)}.mp4`);
+            const imagePath = path.join(__dirname, '..', 'output-raw', 'p1', `temp_image_${slideNumber}.png`);
+            const audioPath = path.join(__dirname, '..', 'output-raw', 'p1', `temp_audio_${slideNumber}.mp3`);
+            promises.push(this.writeImageStream(imagePath, streamImage));
+            promises.push(this.writeAudioStream(audioPath, textAudio));
 
-            // ffmpegPathSlideVideo
-            //     .input(streamImage)
-            //     .input(textAudio.stream)
-            //     .inputFPS(output_video_frame_rate)
-            //     .output(outputPath)
-            //     .outputOptions('-c:v', 'libx264', '-tune', 'stillimage', '-c:a', 'aac', '-b:a', '192k', '-pix_fmt', 'yuv420p', '-shortest')
-            //     .format('mp4')
-            //     .on('start', (command) => console.log('FFmpeg merge video command:', command))
-            //     .on('error', (err) => {
-            //         console.error('FFmpeg merge video error:', err);
-            //         throw new Error('Video merge failed');
-            //     })
-            //     .on('end', () => console.log('Video merge completed'))
-            //     .run();
+            filePathList.push(imagePath);
+            filePathList.push(audioPath);
 
-            // Save the PNG buffer to a temporary file
-            const tempImagePath = path.join(__dirname, '..', 'output-raw', `temp_image_${slideNumber}.png`);
-            const tempAudioPath = path.join(__dirname, '..', 'output-raw', `temp_audio_${slideNumber}.mp3`);
-            fs.writeFileSync(tempImagePath, streamImage);
-            const audioFile = fs.createWriteStream(tempAudioPath);
-
-            // Pipe the audio stream to the audio file
-            textAudio.stream.pipe(audioFile);
-
-            textAudio.stream.on('end', () => {
-
-                // Execute the ffmpeg command to merge the image and audio
-                const ffmpegCommand = `ffmpeg -y -loop 1 -i ${tempImagePath} -i ${tempAudioPath} -c:v libx264 -tune stillimage -c:a aac -b:a 192k -shortest ${outputPath}`;
-
-                exec(ffmpegCommand, (error, stdout, stderr) => {
-                    if (error) {
-                        console.error(`Error merging image and audio: ${error}`);
-                    } else {
-                        console.log('Merge complete!');
-                        // Remove the temporary image file
-                        // fs.unlinkSync(tempImagePath);
-                    }
-                });
-                slideNumber++;
-
-            });
-
+            slideNumber++;
 
         }
 
-        // // Merge audio streams for all slides into a single audio file
-        // const mergedAudioPath = path.join(__dirname, '..', 'output', 'merged_audio.mp3');
+        try {
+            await Promise.all(promises);
+            console.log('All slides processed!');
 
-        // const mergeAudioPromises = slides.map(async (slide) => {
-        //     const { audio_text_path } = slide;
-        //     const textAudio = await this.loadAudio(audio_text_path);
+            const filePathListOutputPath = path.join(__dirname, '..', 'output-raw', `p1_filePath.txt`);
+            await this.writeFile(filePathList, filePathListOutputPath);
 
-        //     const ffmpegMergeAudio = ffmpeg();
-        //     ffmpegMergeAudio.input(textAudio.stream)
-        //         .outputOptions(`-map 0:a`)
-        //         .output(mergedAudioPath)
-        //         .audioCodec('copy');
+            const videoOutputPath = path.join(__dirname, '..', 'output-raw', `p1_finalVideo.mp4`);
+            await this.createVideoFromPhotosAndAudio(filePathListOutputPath ,videoOutputPath);
 
-
-        //     return new Promise<void>((resolve, reject) => {
-        //         ffmpegMergeAudio.on('start', (command) => console.log('FFmpeg merge audio command:', command))
-        //             .on('error', (err) => {
-        //                 console.error('FFmpeg merge audio error:', err);
-        //                 reject(err);
-        //             })
-        //             .on('end', () => {
-        //                 console.log('Audio merge completed for slide:', audio_text_path);
-        //                 resolve();
-        //             })
-        //             .run();
-        //     });
-        // });
-
-        // // Wait for all audio merge processes to complete
-        // await Promise.all(mergeAudioPromises);
+            console.log('Video creation end!');
+            return output_video_file;
 
 
-        // // Generate final video by merging slide videos with the merged audio
-        // const ffmpegMergeVideo = ffmpeg();
-        // for (const outputPath of outputPaths) {
-        //     ffmpegMergeVideo.input(outputPath);
-        // }
+        } catch (error) {
 
-        // ffmpegMergeVideo
-        //     .input(mergedAudioPath)
-        //     .output(path.join(__dirname, '..', 'output', output_video_file))
-        //     .outputOptions([
-        //         '-c:v libx264',
-        //         '-crf 23',
-        //         '-preset veryfast',
-        //         '-vf format=yuv420p',
-        //         '-c:a aac',
-        //         '-b:a 128k',
-        //         '-shortest',
-        //     ])
-        //     .audioCodec('aac')
-        //     .audioBitrate('128k')
-        //     .audioFilter('volume=' + backgroun_audio_volume) // Set background audio volume
-        //     .inputFPS(output_video_frame_rate)
-        //     .duration(output_video_duration_in_seconds)
-        //     .inputOptions('-stream_loop -1') // Loop background audio
-        //     .on('start', (command) => console.log('FFmpeg merge video command:', command))
-        //     .on('error', (err) => {
-        //         console.error('FFmpeg merge video error:', err);
-        //         throw new Error('Video merge failed');
-        //     })
-        //     .on('end', () => console.log('Video merge completed'))
-        //     .run();
+            console.log('Video creation error!');
+            return "error";
 
-        // console.log("VideoGenerationService | generateVideo | end.");
-        return output_video_file;
+        }
+
     }
 
-    private async processSlideImage(slideNumber, streamImage){
-        const tempImagePath = path.join(__dirname, '..', 'output-raw', `temp_image_${slideNumber}.png`);
-        await fs.promises.writeFile(tempImagePath, streamImage);
-      };
+    private async writeFile(filePathList, outputFilePath) {
+        const fileContent = filePathList.reduce((content, filePath, index) => {
+            content += `file '${filePath}'\n`;
+            return content;
+        }, '');
 
-      private async processSlideAudio(slideNumber, textAudio){
-        const tempAudioPath = path.join(__dirname, '..', 'output-raw', `temp_audio_${slideNumber}.mp3`);
-        const audioFile = fs.createWriteStream(tempAudioPath);
-        await new Promise((resolve, reject) => {
-          textAudio.stream.pipe(audioFile)
-            .on('finish', resolve)
-            .on('error', reject);
+        await fs.promises.writeFile(outputFilePath, fileContent);
+    };
+
+    private async createVideoFromPhotosAndAudio(fileListPath, outputFilePath): Promise<any> {
+        const command = `ffmpeg -y -f concat -safe 0 -i ${fileListPath} -vf "scale=1920:1080,format=yuv420p" -af "volume=2" ${outputFilePath}`;
+        console.log('command: ' + command);
+
+        return new Promise((resolve, reject) => {
+            exec(command, (error, stdout, stderr) => {
+                if (error) {
+                    reject();
+                    console.error(`Error creating video: ${error}`);
+                } else {
+                    resolve("Video creation complete!");
+                    console.log('Video creation complete!');
+                }
+            });
         });
-      };
+    };
+
+    private async writeImageStream(filePath, streamImage): Promise<any> {
+        // const filePath = path.join(__dirname, '..', 'output-raw', `temp_image_${slideNumber}.png`);
+        return fs.promises.writeFile(filePath, streamImage);
+        // .catch(error => {
+        //   console.error(`Error writing image file for slide ${slideNumber}: ${error}`);
+        //   throw error; // Rethrow the error to be caught by Promise.all()
+        // });
+    };
+
+    private async writeAudioStream(filePath, textAudio): Promise<any> {
+        // const filePath = path.join(__dirname, '..', 'output-raw', `temp_audio_${slideNumber}.mp3`);
+        const audioFile = fs.createWriteStream(filePath);
+        return new Promise((resolve, reject) => {
+            textAudio.stream.pipe(audioFile)
+                .on('finish', resolve)
+                .on('error', reject);
+        });
+    };
 
 
     private async loadImage(imagePath: string): Promise<any> {

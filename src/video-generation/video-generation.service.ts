@@ -9,6 +9,10 @@ import { GenerateVideoData, SlideData, TextStringData } from '../models/generate
 import axios from 'axios';
 const { exec } = require('child_process');
 
+const mkdir = promisify(fs.mkdir);
+const writeFile = promisify(fs.writeFile);
+let tempSlidesVideos = [];
+
 @Injectable()
 export class VideoGenerationService {
     // async generateVideo(data: GenerateVideoData): Promise<string> {
@@ -284,9 +288,9 @@ export class VideoGenerationService {
             console.log('writeFile processed!');
 
 
-            
+
             const videoOutputPath = path.join(__dirname, '..', 'output-raw', `p1_finalVideo.mp4`);
-            await this.createVideoFromPhotosAndAudio(filePathList,filePathListOutputPath, videoOutputPath);
+            await this.createVideoFromPhotosAndAudio(tempSlidesVideos, videoOutputPath);
 
             console.log('Video creation end!');
             return output_video_file;
@@ -301,65 +305,107 @@ export class VideoGenerationService {
 
     }
 
-    private async writeFile(filePathList, outputFilePath) {
-        const fileContent = filePathList.map(({ image, audio }) => `file '${image}'\nfile '${audio}'`).join('\n');
-        await fs.promises.writeFile(outputFilePath, fileContent);
-    };
 
-    private async createVideoFromPhotosAndAudio(filePathList,fileListPath, outputFilePath): Promise<any> {
+    private async writeFile(filePathList, outputFilePath) {
+        let counter = -1;
+        const fileContent = await Promise.all(filePathList.map(async ({ image, audio }) => {
+            const duration = await this.calculateAudioDuration(audio);
+
+            await new Promise((resolve, reject) => {
+                counter++;
+                const videoOutputPath = path.join(__dirname, '..', 'output-raw','p1', `p1_finalVideo_${counter}.mp4`);
+                tempSlidesVideos.push(videoOutputPath);
+                ffmpeg()
+                    .input(image)
+                    .inputOptions('-loop 1')
+                    .input(audio)
+                    .outputOptions('-t', duration)
+                    .videoCodec('libx264')
+                    .audioCodec('aac')
+                    .output(videoOutputPath)
+                    .on('end', () => {
+                        console.log('Video successfully created!');
+                        resolve('Video successfully created!');
+                    })
+                    .on('error', (err) => {
+                        console.error('Error creating video:', err);
+                        reject(err);
+                    })
+                    .run();
+            });
+
+            return `file '${image}'\nfile '${audio}'`;
+        }));
+
+        await fs.promises.writeFile(outputFilePath, fileContent.join('\n'));
+
+    }
+
+
+    private calculateAudioDuration(audioFilePath): Promise<number> {
+        return new Promise((resolve, reject) => {
+            const command = ffmpeg().input(audioFilePath);
+            command.ffprobe((err, data) => {
+                if (err) {
+                    console.error('Error calculating audio duration:', err);
+                    reject(err);
+                } else {
+                    const duration = data.format.duration;
+                    command.kill();
+                    resolve(duration);
+                }
+            });
+        });
+    }
+
+    private async createVideoFromPhotosAndAudio(filePathList, outputFilePath): Promise<any> {
 
         return new Promise((resolve, reject) => {
             let command = ffmpeg();
-            
+
             for (let i = 0; i < filePathList.length; i++) {
-              command.input(filePathList[i]);
+                command.input(filePathList[i]);
             }
-        
-            command.input(fileListPath)
-              .complexFilter([
-                {
-                  filter: 'concat',
-                  options: {
-                    n: filePathList.length,
-                    v: 1,
-                    a: 1,
-                    [filePathList.length]: {
-                      filter: 'scale',
-                      options: '1920:1080',
-                      outputs: '[v_scaled]'
-                    }
-                  },
-                  outputs: ['[v]', '[a]']
-                }
-              ])
-              .output(outputFilePath)
-              .on('end', () => {
-                resolve('Video creation complete!');
-              })
-              .on('error', (err) => {
-                reject(err);
-              })
-              .run();
-          });
+
+            command.outputOptions('-c', 'copy'); // Use the "copy" codec for video and audio streams to avoid re-encoding
+            command.output(outputFilePath);
+            
+            command.on('end', () => {
+              console.log('Final video successfully created!');
+              resolve('Final Video successfully created!');
+            }).on('error', (err) => {
+              console.error('Error creating final video:', err);
+              reject(err)
+            })
+            .mergeToFile(outputFilePath, path.join(__dirname, '..', 'output-raw'));
+        });
     };
 
     private async writeImageStream(filePath, streamImage): Promise<any> {
-        // const filePath = path.join(__dirname, '..', 'output-raw', `temp_image_${slideNumber}.png`);
-        return fs.promises.writeFile(filePath, streamImage);
-        // .catch(error => {
-        //   console.error(`Error writing image file for slide ${slideNumber}: ${error}`);
-        //   throw error; // Rethrow the error to be caught by Promise.all()
-        // });
+        try {
+            const directory = path.dirname(filePath);
+            await mkdir(directory, { recursive: true });
+            await writeFile(filePath, streamImage);
+        } catch (err) {
+            throw new Error('Error writing image stream: ' + err.message);
+        }
     };
 
+
     private async writeAudioStream(filePath, textAudio): Promise<any> {
-        // const filePath = path.join(__dirname, '..', 'output-raw', `temp_audio_${slideNumber}.mp3`);
-        const audioFile = fs.createWriteStream(filePath);
-        return new Promise((resolve, reject) => {
-            textAudio.stream.pipe(audioFile)
-                .on('finish', resolve)
-                .on('error', reject);
-        });
+        try {
+            const directory = path.dirname(filePath);
+            await mkdir(directory, { recursive: true });
+
+            const audioFile = fs.createWriteStream(filePath);
+            return new Promise((resolve, reject) => {
+                textAudio.stream.pipe(audioFile)
+                    .on('finish', resolve)
+                    .on('error', reject);
+            });
+        } catch (err) {
+            throw new Error('Error writing audio stream: ' + err.message);
+        }
     };
 
 

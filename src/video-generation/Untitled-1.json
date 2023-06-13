@@ -1,13 +1,9 @@
 {
-    "output_video_width": 640,
-    "output_video_height": 580,
-    "output_video_duration_in_seconds": 30,
-    "output_video_frame_rate": 10,
+    "output_video_width": 1920,
+    "output_video_height": 1080,
     "output_video_file": "assets/output.mp4",
     "backgroun_image_path": "http://localhost:3000/assets/bg1.png",
-    "backgroun_image_resize_option": "shrink", 
     "backgroun_audio_path": "http://localhost:3000/assets/bg.mp3",
-    "backgroun_audio_volume": 0.3, 
     "slides": [
         {
             "audio_text_path": "http://localhost:3000/assets/text_audio_path_1.mp3",

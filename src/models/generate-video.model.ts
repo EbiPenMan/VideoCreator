@@ -29,7 +29,7 @@ export class GenerateVideoData {
     type: String,
     description: 'Path to the output video file',
   })
-  output_video_file: string;
+  output_video_file_name: string;
 
   @ApiProperty({
     type: String,

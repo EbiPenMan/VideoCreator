@@ -1,81 +1,81 @@
 {
-    "output_video_width": 640,
-    "output_video_height": 580,
-    "output_video_duration_in_seconds": 0,
-    "output_video_frame_rate": 0,
-    "output_video_file": "output.mp4",
-    "backgroun_image_path": "http://localhost:3000/assets/bg.png",
-    "backgroun_image_resize_option": "shrink",
-    "backgroun_audio_path": "http://localhost:3000/assets/bg.mp3",
-    "backgroun_audio_volume": 1,
-    "slides": [
-      {
-        "audio_text_path": "http://localhost:3000/assets/text_audio_path_1.mp3",
-        "text_strings": [
-          {
-            "text_string": "I",
-            "text_color": "fff000",
-            "text_font": "Arial",
-            "text_fontSize": 30,
-            "text_is_bold": false,
-            "text_is_italic": true,
-            "text_is_underline": false
-          },
-          {
-            "text_string": " Love ",
-            "text_color": "fff000",
-            "text_font": "Arial",
-            "text_fontSize": 40,
-            "text_is_bold": true,
-            "text_is_italic": false,
-            "text_is_underline": true
-          },
-          {
-            "text_string": "you",
-            "text_color": "34f000",
-            "text_font": "Arial",
-            "text_fontSize": 30,
-            "text_is_bold": false,
-            "text_is_italic": true,
-            "text_is_underline": false
-          }
-        ],
-        "text_block_x_position": 200,
-        "text_block_y_position": 290
-      },
-      {
-        "audio_text_path": "http://localhost:3000/assets/text_audio_path_2.mp3",
-        "text_strings": [
-          {
-            "text_string": "You",
-            "text_color": "blue",
-            "text_font": "Arial",
-            "text_fontSize": 30,
-            "text_is_bold": false,
-            "text_is_italic": true,
-            "text_is_underline": false
-          },
-          {
-            "text_string": " hate ",
-            "text_color": "red",
-            "text_font": "Arial",
-            "text_fontSize": 40,
-            "text_is_bold": true,
-            "text_is_italic": false,
-            "text_is_underline": true
-          },
-          {
-            "text_string": "me",
-            "text_color": "yellow",
-            "text_font": "Arial",
-            "text_fontSize": 30,
-            "text_is_bold": false,
-            "text_is_italic": true,
-            "text_is_underline": false
-          }
-        ],
-        "text_block_x_position": 200,
-        "text_block_y_position": 290
-      }
-    ]
-  }
+  "output_video_width": 1920,
+  "output_video_height": 1080,
+  "output_video_duration_in_seconds": 0,
+  "output_video_frame_rate": 0,
+  "output_video_file_name": "output1.mp4",
+  "backgroun_image_path": "http://localhost:3000/assets/bg.png",
+  "backgroun_image_resize_option": "shrink",
+  "backgroun_audio_path": "http://localhost:3000/assets/bg.mp3",
+  "backgroun_audio_volume": 1,
+  "slides": [
+    {
+      "audio_text_path": "http://localhost:3000/assets/text_audio_path_1.mp3",
+      "text_strings": [
+        {
+          "text_string": "I",
+          "text_color": "fff000",
+          "text_font": "Arial",
+          "text_fontSize": 60,
+          "text_is_bold": false,
+          "text_is_italic": true,
+          "text_is_underline": false
+        },
+        {
+          "text_string": " Love ",
+          "text_color": "fff000",
+          "text_font": "Arial",
+          "text_fontSize": 80,
+          "text_is_bold": true,
+          "text_is_italic": false,
+          "text_is_underline": true
+        },
+        {
+          "text_string": "you",
+          "text_color": "34f000",
+          "text_font": "Arial",
+          "text_fontSize": 60,
+          "text_is_bold": false,
+          "text_is_italic": true,
+          "text_is_underline": false
+        }
+      ],
+      "text_block_x_position": 480,
+      "text_block_y_position": 540
+    },
+    {
+      "audio_text_path": "http://localhost:3000/assets/text_audio_path_2.mp3",
+      "text_strings": [
+        { 
+          "text_string": "You",
+          "text_color": "blue",
+          "text_font": "Arial",
+          "text_fontSize": 60,
+          "text_is_bold": false,
+          "text_is_italic": true,
+          "text_is_underline": false
+        },
+        {
+          "text_string": " hate ",
+          "text_color": "red",
+          "text_font": "Arial",
+          "text_fontSize": 80,
+          "text_is_bold": true,
+          "text_is_italic": false,
+          "text_is_underline": true
+        },
+        {
+          "text_string": "me",
+          "text_color": "yellow",
+          "text_font": "Arial",
+          "text_fontSize": 60,
+          "text_is_bold": false,
+          "text_is_italic": true,
+          "text_is_underline": false
+        }
+      ],
+      "text_block_x_position": 480,
+      "text_block_y_position": 540
+    }
+  ]
+}

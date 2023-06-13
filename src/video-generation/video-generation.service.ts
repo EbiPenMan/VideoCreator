@@ -19,176 +19,13 @@ let tempSlidesVideos = [];
 
 @Injectable()
 export class VideoGenerationService {
-  // async generateVideo(data: GenerateVideoData): Promise<string> {
-  //     const {
-  //         output_video_width,
-  //         output_video_height,
-  //         output_video_duration_in_seconds,
-  //         output_video_frame_rate,
-  //         output_video_file,
-  //         backgroun_image_path,
-  //         backgroun_image_resize_option,
-  //         backgroun_audio_path,
-  //         backgroun_audio_volume,
-  //         slides,
-  //     } = data;
-
-  //     // Load background image
-  //     const backgroundImage = await this.loadImage(backgroun_image_path);
-  //     console.log("VideoGenerationService | generateVideo | backgroundImage.");
-
-  //     // Setup canvas
-  //     const canvas = createCanvas(output_video_width, output_video_height);
-  //     const ctx = canvas.getContext('2d');
-
-  //     // Configure FFmpeg
-  //     const ffmpegPath = ffmpeg();
-  //     ffmpegPath.outputOptions([
-  //         '-r ' + output_video_frame_rate,
-  //         '-pix_fmt yuv420p',
-  //         '-movflags +faststart',
-  //     ]);
-
-  //     // Generate video frames
-  //     let videoDuration = 0;
-  //     for (const slide of slides) {
-  //         const { audio_text_path, text_strings, text_block_x_position, text_block_y_position } = slide;
-
-  //         // Load text audio
-  //         const textAudio = await this.loadAudio(audio_text_path);
-  //         console.log("VideoGenerationService | generateVideo | textAudio.");
-
-  //         for (const textString of text_strings) {
-  //             const {
-  //                 text_string,
-  //                 text_color,
-  //                 text_font,
-  //                 text_fontSize,
-  //                 text_is_bold,
-  //                 text_is_italic,
-  //                 text_is_underline,
-  //             } = textString;
-
-  //             // Set text style
-  //             ctx.clearRect(0, 0, canvas.width, canvas.height);
-  //             ctx.drawImage(backgroundImage, 0, 0);
-
-  //             ctx.fillStyle = text_color;
-  //             ctx.font = `${text_is_bold ? 'bold ' : ''}${text_is_italic ? 'italic ' : ''}${text_fontSize}px ${text_font}`;
-  //             ctx.textBaseline = 'top';
-  //             ctx.textAlign = 'left';
-  //             ctx.fillText(text_string, text_block_x_position, text_block_y_position);
-
-  //             // Create a readable stream from the canvas image data
-  //             const frameImageData = canvas.toBuffer();
-  //             const frameStream = new Readable();
-  //             frameStream.push(frameImageData);
-  //             frameStream.push(null); // Signal the end of the stream
-
-  //             // Add frame to FFmpeg as a video input
-  //             ffmpegPath.input(frameStream).inputOptions('-f rawvideo');
-
-  //             // Add frame overlay to the complex filtergraph
-  //             ffmpegPath.complexFilter([`[${ffmpegPath._inputs.length - 1}:v]overlay=format=auto[output]`,], 'output');
-  //             console.log("VideoGenerationService | generateVideo | Add frame to FFmpeg.");
-
-  //             ffmpegPath.input(textAudio.stream); // Add textAudio as an audio input for the slide
-
-  //             videoDuration += textAudio.duration;
-  //         }
-  //     }
-
-  //     const backgroundAudio = await this.loadAudio(backgroun_audio_path);
-  //     const backgroundAudioStream = backgroundAudio.stream;
-  //     const backgroundAudioDuration = backgroundAudio.duration;
-
-  //     // Add background audio as an audio input
-  //     ffmpegPath.input(backgroundAudioStream).inputOptions('-stream_loop -1').audioCodec('aac');
-
-  //     console.log("VideoGenerationService | generateVideo | Generate final video.");
-  //     // Generate final video
-  //     ffmpegPath
-  //         .output(path.join(__dirname, '..', 'output', output_video_file))
-  //         .outputOptions([
-  //             '-c:v libx264',
-  //             '-crf 23',
-  //             '-preset veryfast',
-  //             '-vf format=yuv420p',
-  //             '-c:a aac',
-  //             '-b:a 128k',
-  //             '-shortest',
-  //         ])
-  //         .audioCodec('aac')
-  //         .audioBitrate('128k')
-  //         .audioFilter('volume=' + backgroun_audio_volume) // Set background audio volume
-  //         .inputFPS(output_video_frame_rate)
-  //         .inputOptions('-stream_loop -1') // Loop background audio
-  //         .on('start', (command) => console.log('FFmpeg command:', command))
-  //         .on('error', (err) => {
-  //             console.error('FFmpeg error:', err);
-  //             throw new Error('Video generation failed');
-  //         })
-  //         .on('end', () => console.log('Video generation completed'))
-  //         .run();
-
-  //     console.log("VideoGenerationService | generateVideo | end.");
-  //     return output_video_file;
-  // }
-
-  // private async loadImage(imagePath: string): Promise<any> {
-  //     console.log("VideoGenerationService | loadImage | start.");
-  //     return new Promise((resolve, reject) => {
-  //         if (this.isURL(imagePath)) {
-  //             axios
-  //                 .get(imagePath, { responseType: 'arraybuffer' })
-  //                 .then((response) => {
-  //                     const img = new Image();
-  //                     img.src = `data:image/jpeg;base64,${Buffer.from(
-  //                         response.data,
-  //                         'binary'
-  //                     ).toString('base64')}`;
-  //                     img.onload = () => {
-  //                         console.log("VideoGenerationService | loadImage | end.");
-  //                         resolve(img);
-  //                     }
-  //                     img.onerror = (e) => {
-  //                         console.log("VideoGenerationService | loadImage | reject.");
-  //                         reject(e);
-  //                     }
-  //                 })
-  //                 .catch((error) => {
-  //                     console.log("VideoGenerationService | loadImage | reject2.");
-  //                     reject(error);
-  //                 });
-  //         } else {
-  //             fs.readFile(imagePath, (err, data) => {
-  //                 if (err) {
-  //                     console.log("VideoGenerationService | loadImage | readFile reject.");
-  //                     reject(err);
-  //                     return;
-  //                 }
-  //                 const img = new Image();
-  //                 img.src = `data:image/jpeg;base64,${data.toString('base64')}`;
-  //                 img.onload = () => {
-  //                     console.log("VideoGenerationService | loadImage | readFile end.");
-  //                     resolve(img);
-  //                 }
-  //                 img.onerror = (e) => {
-  //                     console.log("VideoGenerationService | loadImage | readFile reject.");
-  //                     reject(e);
-  //                 }
-  //             });
-  //         }
-  //     });
-  // }
-
   async generateVideo(data: GenerateVideoData): Promise<string> {
     const {
       output_video_width,
       output_video_height,
       output_video_duration_in_seconds,
       output_video_frame_rate,
-      output_video_file,
+      output_video_file_name,
       backgroun_image_path,
       backgroun_image_resize_option,
       backgroun_audio_path,
@@ -314,8 +151,9 @@ export class VideoGenerationService {
       const videoOutputPath = path.join(
         __dirname,
         '..',
-        'output-raw',
-        `p1_finalVideo.mp4`,
+        '..',
+        'assets',
+        output_video_file_name,
       );
       await this.createVideoFromPhotosAndAudio(
         tempSlidesVideos,
@@ -323,7 +161,7 @@ export class VideoGenerationService {
       );
 
       console.log('Video creation end!');
-      return output_video_file;
+      return 'http://localhost:3000/assets/' + output_video_file_name;
     } catch (error) {
       console.log('Video creation error!');
       return 'error';
@@ -351,8 +189,9 @@ export class VideoGenerationService {
             .inputOptions('-loop 1')
             .input(audio)
             .outputOptions('-t', duration)
-            .videoCodec('libx265')
+            .videoCodec('libx264')
             .audioCodec('aac')
+            .outputOptions('-pix_fmt', 'yuv420p')
             .output(videoOutputPath)
             .on('end', () => {
               console.log('Video successfully created!');
@@ -403,7 +242,8 @@ export class VideoGenerationService {
         command.input(filePathList[i]);
       }
       command
-        .videoCodec('libx265')
+        .outputOptions('-pix_fmt', 'yuv420p')
+        .videoCodec('libx264')
         .on('end', () => {
           console.log('Final video successfully created!');
           resolve('Final Video successfully created!');
@@ -412,9 +252,9 @@ export class VideoGenerationService {
           console.error('Error creating final video:', err);
           reject(err);
         });
-        // .on('stderr', (stderrLine) => {
-        //   console.error('FFmpeg stderr:', stderrLine);
-        // });
+      // .on('stderr', (stderrLine) => {
+      //   console.error('FFmpeg stderr:', stderrLine);
+      // });
 
       command.mergeToFile(outputFilePath, tempFolder);
     });

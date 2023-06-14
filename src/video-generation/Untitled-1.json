@@ -1,8 +1,8 @@
 {
-    "output_video_width": 1920,
-    "output_video_height": 1080,
+    "output_video_width": 500,
+    "output_video_height": 500,
     "output_video_file": "assets/output.mp4",
-    "backgroun_image_path": "http://localhost:3000/assets/bg1.png",
+    "backgroun_image_path": "http://localhost:3000/assets/bg.png",
     "backgroun_audio_path": "http://localhost:3000/assets/bg.mp3",
     "slides": [
         {
@@ -31,8 +31,11 @@
                     "text_is_underline": true
                 }
             ],
-            "text_block_x_position": 100,
-            "text_block_y_position": 100
+            "text_block_x_position": 250,
+            "text_block_y_position": 250,
+            "text_block_line_hight": 50,
+            "textAlign": "middle",
+            "textBaseline": "center"
         },
         {
             "audio_text_path": "http://localhost:3000/assets/text_audio_path_2.mp3",
@@ -60,8 +63,11 @@
                     "text_is_underline": true
                 }
             ],
-            "text_block_x_position": 100,
-            "text_block_y_position": 100
+            "text_block_x_position": 250,
+            "text_block_y_position": 250,
+            "text_block_line_hight": 50,
+            "textAlign": "middle",
+            "textBaseline": "center"
         }
     ]
 }

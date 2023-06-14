@@ -54,6 +54,9 @@ export class VideoGenerationService {
         text_strings,
         text_block_x_position,
         text_block_y_position,
+        text_block_line_hight,
+        textAlign,
+        textBaseline,
       } = slide;
 
       // Load text audio
@@ -71,8 +74,15 @@ export class VideoGenerationService {
       ctx.drawImage(backgroundImage, 0, 0);
 
       let text_block_x_position_tmp = text_block_x_position;
+      let text_block_y_position_tmp = text_block_y_position;
+      let textAlign_tmp = textAlign;
 
-      for (const textString of text_strings) {
+      // for (let index = 0; index < text_strings.length; index++) {
+      //   const element = text_strings[index];
+
+      // }
+
+      for (let index = 0; index < text_strings.length; index++) {
         const {
           text_string,
           text_color,
@@ -80,28 +90,62 @@ export class VideoGenerationService {
           text_fontSize,
           text_is_bold,
           text_is_italic,
-          text_is_underline,
-        } = textString;
+          text_is_underline
+        } = text_strings[index];
 
         // Set text style
 
+        if (textAlign === 'center') {
+          let text_block_x_position_tmp1 = ((text_block_x_position) - (this.measureTextLine(ctx, text_strings, textBaseline, textAlign, index) * 0.5));
+          // text_block_x_position_tmp1 -= Math.abs((text_block_x_position_tmp - text_block_x_position_tmp1));
+          text_block_x_position_tmp = text_block_x_position_tmp1;
+
+          textAlign_tmp = 'left';
+        }
+
         ctx.fillStyle = text_color;
-        ctx.font = `${text_is_bold ? 'bold ' : ''}${
-          text_is_italic ? 'italic ' : ''
-        }${text_fontSize}px ${text_font}`;
-        ctx.textBaseline = 'middle';
-        ctx.textAlign = 'left';
+        ctx.font = `${text_is_bold ? 'bold ' : ''}${text_is_italic ? 'italic ' : ''
+          }${text_fontSize}px ${text_font}`;
+        ctx.textBaseline = textBaseline;
+        ctx.textAlign = textAlign_tmp;
 
         // Measure the text width
         const textWidth = ctx.measureText(text_string).width;
 
+        // let textLines = this.sliptLinesText(ctx, text_string);
+        //TODO check
+        // text_block_y_position_tmp = text_block_y_position;
+        // for (const line of textLines) {
+        //   ctx.fillText(
+        //     line,
+        //     text_block_x_position_tmp,
+        //     text_block_y_position_tmp,
+        //   );
+        //   if (textLines.length > 1) {
+        //     text_block_y_position_tmp += text_block_line_hight;
+        //     text_block_x_position_tmp = text_block_x_position;
+        //   }
+        // }
+
         ctx.fillText(
           text_string,
           text_block_x_position_tmp,
-          text_block_y_position,
+          text_block_y_position_tmp,
         );
+
+
+
         // Update the x position for the next text
-        text_block_x_position_tmp += textWidth;
+        if (textAlign === 'left' || textAlign === 'start') {
+          text_block_x_position_tmp += textWidth;
+        }
+        else if (textAlign === 'right' || textAlign === 'end') {
+          text_block_x_position_tmp += textWidth;
+        }
+        else if (textAlign === 'center') {
+          // this.measureTextLine();
+          // text_block_x_position_tmp += textWidth;
+        }
       }
 
       // Create a readable stream from the canvas image data
@@ -342,4 +386,115 @@ export class VideoGenerationService {
       },
     );
   }
+
+
+  // @description: wrapText wraps HTML canvas text onto a canvas of fixed width
+  // @param ctx - the context for the canvas we want to wrap text on
+  // @param text - the text we want to wrap.
+  // @param x - the X starting point of the text on the canvas.
+  // @param y - the Y starting point of the text on the canvas.
+  // @param maxWidth - the width at which we want line breaks to begin - i.e. the maximum width of the canvas.
+  // @param lineHeight - the height of each line, so we can space them below each other.
+  // @returns an array of [ lineText, x, y ] for all lines
+  private wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+    // First, start by splitting all of our text into words, but splitting it into an array split by spaces
+    let words = text.split(' ');
+    let line = ''; // This will store the text of the current line
+    let testLine = ''; // This will store the text when we add a word, to test if it's too long
+    let lineArray = []; // This is an array of lines, which the function will return
+
+    // Lets iterate over each word
+    for (var n = 0; n < words.length; n++) {
+      // Create a test line, and measure it..
+      testLine += `${words[n]} `;
+      let metrics = ctx.measureText(testLine);
+      let testWidth = metrics.width;
+      // If the width of this test line is more than the max width
+      if (testWidth > maxWidth && n > 0) {
+        // Then the line is finished, push the current line into "lineArray"
+        lineArray.push([line, x, y]);
+        // Increase the line height, so a new line is started
+        y += lineHeight;
+        // Update line and test line to use this word as the first word on the next line
+        line = `${words[n]} `;
+        testLine = `${words[n]} `;
+      }
+      else {
+        // If the test line is still less than the max width, then add the word to the current line
+        line += `${words[n]} `;
+      }
+      // If we never reach the full max width, then there is only one line.. so push it into the lineArray so we return something
+      if (n === words.length - 1) {
+        lineArray.push([line, x, y]);
+      }
+    }
+    // Return the line array
+    return lineArray;
+  }
+
+  // @description: wrapText wraps HTML canvas text onto a canvas of fixed width
+  // @param ctx - the context for the canvas we want to wrap text on
+  // @param text - the text we want to wrap.
+  private sliptLinesText(ctx, text) {
+    let words = text.split('\n');
+    for (let index = 0; index < words.length; index++) {
+      const element = words[index];
+      words[index] = words[index].replace(/[\r\n]/gm, '');
+    }
+    return words;
+  }
+
+  private measureTextLine(ctx, text_strings, textBaseline, textAlign, currentIndex) {
+    let lineWidth = 0;
+    for (let i = currentIndex; i < text_strings.length; i++) {
+      const {
+        text_string,
+        text_color,
+        text_font,
+        text_fontSize,
+        text_is_bold,
+        text_is_italic,
+        text_is_underline
+      } = text_strings[i];
+
+      // Set text style
+
+      ctx.fillStyle = text_color;
+      ctx.font = `${text_is_bold ? 'bold ' : ''}${text_is_italic ? 'italic ' : ''
+        }${text_fontSize}px ${text_font}`;
+      ctx.textBaseline = textBaseline;
+      ctx.textAlign = textAlign;
+
+      // Measure the text width
+      lineWidth += ctx.measureText(text_string).width;
+    }
+
+    let lineWidthBefor = 0;
+    for (let i = 0; i < currentIndex; i++) {
+      const {
+        text_string,
+        text_color,
+        text_font,
+        text_fontSize,
+        text_is_bold,
+        text_is_italic,
+        text_is_underline
+      } = text_strings[i];
+
+      // Set text style
+
+      ctx.fillStyle = text_color;
+      ctx.font = `${text_is_bold ? 'bold ' : ''}${text_is_italic ? 'italic ' : ''
+        }${text_fontSize}px ${text_font}`;
+      ctx.textBaseline = textBaseline;
+      ctx.textAlign = textAlign;
+
+      // Measure the text width
+      lineWidthBefor += ctx.measureText(text_string).width;
+    }
+
+
+    return lineWidth - (lineWidthBefor);
+  }
+
 }

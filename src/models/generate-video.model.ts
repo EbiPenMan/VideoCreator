@@ -86,6 +86,24 @@ export class SlideData {
     description: 'Y position of the text block on the slide',
   })
   text_block_y_position: number;
+
+  @ApiProperty({
+    type: Number,
+    description: 'line hight',
+  })
+  text_block_line_hight: number;
+
+  @ApiProperty({
+    type: ['top' , 'bottom', 'middle', 'alphabetic', 'hanging'],
+    description: 'text Baseline',
+  })
+  textBaseline: 'top' | 'bottom'| 'middle'| 'alphabetic'| 'hanging';
+
+  @ApiProperty({
+    enum: ['start' , 'end', 'left', 'center','right'],
+    description: 'text Align',
+  })
+  textAlign: 'start' | 'end'| 'left'| 'center'| 'right';
 }
 
 export class TextStringData {

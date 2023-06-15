@@ -57,11 +57,45 @@ export class VideoGenerationService {
                 text_block_line_hight,
                 textAlign,
                 textBaseline,
+                speaker_id,
+                style_wav,
+                language_id
             } = slide;
 
             // Load text audio
-            const textAudio = await this.loadAudio(audio_text_path);
-            console.log('VideoGenerationService | generateVideo | textAudio.');
+            let textAudio;
+            let isBinaryEncoding = false;
+            if (audio_text_path == null || audio_text_path === "") {
+                isBinaryEncoding = true;
+                const headers = {
+                    Accept: 'audio/wav'
+                };
+
+                try {
+                    // Specify the API URL
+                    const apiUrl = 'http://85.93.89.115:5003/api/tts';
+                    // Specify the query parameters
+                    const queryParams = {
+                        text: text_strings.map(obj => obj.text_string).join(' '),
+                        speaker_id: speaker_id,
+                        style_wav: style_wav,
+                        language_id: language_id
+                    };
+                    const response = await axios.get(apiUrl, {
+                        params: queryParams,
+                        responseType: 'arraybuffer',
+                        headers: headers
+                    });
+                    textAudio = response.data;
+                } catch (error) {
+                    console.error('VideoGenerationService | generateVideo | textAudio error');
+                }
+
+                console.log('VideoGenerationService | generateVideo | textAudio.');
+            } else {
+                textAudio = await this.loadAudio(audio_text_path);
+                console.log('VideoGenerationService | generateVideo | textAudio.');
+            }
 
             // Setup canvas for the slide
             const canvas = createCanvas(output_video_width, output_video_height);
@@ -160,7 +194,7 @@ export class VideoGenerationService {
 
                 // Update the x position for the next text
                 if (textAlign === 'left' || textAlign === 'start') {
-                  text_block_x_position_tmp += textWidth;
+                    text_block_x_position_tmp += textWidth;
                 }
                 // else if (textAlign === 'right' || textAlign === 'end') {
                 //   text_block_x_position_tmp -= textWidth;
@@ -179,15 +213,18 @@ export class VideoGenerationService {
                 'p1',
                 `temp_image_${slideNumber}.png`,
             );
+
+            let extention = audio_text_path == null || audio_text_path === "" ? "wav" : "mp3"
+
             const audioPath = path.join(
                 __dirname,
                 '..',
                 'output-raw',
                 'p1',
-                `temp_audio_${slideNumber}.mp3`,
+                `temp_audio_${slideNumber}.${extention}`,
             );
             promises.push(this.writeImageStream(imagePath, streamImage));
-            promises.push(this.writeAudioStream(audioPath, textAudio));
+            promises.push(this.writeAudioStream(audioPath, textAudio, isBinaryEncoding));
 
             filePathList.push({
                 image: imagePath,
@@ -324,30 +361,54 @@ export class VideoGenerationService {
     }
 
     private async writeImageStream(filePath, streamImage): Promise<any> {
-        try {
-            const directory = path.dirname(filePath);
-            await mkdir(directory, { recursive: true });
-            await writeFile(filePath, streamImage);
-        } catch (err) {
-            throw new Error('Error writing image stream: ' + err.message);
-        }
+        return new Promise(async (resolve, reject) => {
+            try {
+                const directory = path.dirname(filePath);
+                await mkdir(directory, { recursive: true });
+                await writeFile(filePath, streamImage);
+                resolve(null);
+            } catch (err) {
+                reject('Error writing image stream: ' + err.message)
+            }
+        });
     }
 
-    private async writeAudioStream(filePath, textAudio): Promise<any> {
-        try {
-            const directory = path.dirname(filePath);
-            await mkdir(directory, { recursive: true });
+    private async writeAudioStream(filePath, textAudio, isBinaryEncoding): Promise<any> {
+        return new Promise(async (resolve, reject) => {
+            try {
+                const directory = path.dirname(filePath);
+                await mkdir(directory, { recursive: true });
+                if (isBinaryEncoding) {
+                    // Create a readable stream from the audio buffer
+                    // const audioData = Buffer.from(textAudio, 'binary');
 
-            const audioFile = fs.createWriteStream(filePath);
-            return new Promise((resolve, reject) => {
-                textAudio.stream
-                    .pipe(audioFile)
-                    .on('finish', resolve)
-                    .on('error', reject);
-            });
-        } catch (err) {
-            throw new Error('Error writing audio stream: ' + err.message);
-        }
+                    //    return this.writeFilePromise(filePath, textAudio, { encoding: 'binary' });
+
+                    // const audioStream = Readable.from(textAudio);
+                    // const fileStream = fs.createWriteStream(filePath);
+                    // audioStream.pipe(fileStream);
+
+                    fs.writeFile(filePath, textAudio, { encoding: 'binary' }, (error) => {
+                        if (error) {
+                            reject(error);
+                        } else {
+                            resolve(null);
+                        }
+                    });
+
+
+                } else {
+                    const audioFile = fs.createWriteStream(filePath);
+                    textAudio.stream
+                        .pipe(audioFile)
+                        .on('finish', resolve)
+                        .on('error', reject);
+                }
+
+            } catch (err) {
+                throw new Error('Error writing audio stream: ' + err.message);
+            }
+        });
     }
 
     private async loadImage(imagePath: string): Promise<any> {
@@ -364,7 +425,9 @@ export class VideoGenerationService {
                 reject(e);
             };
         });
+
     }
+
 
     private isURL(imagePath: string): boolean {
         try {
@@ -520,5 +583,16 @@ export class VideoGenerationService {
         }
 
         return lineWidth - lineWidthBefor;
+    }
+    private writeFilePromise(filePath, data, options) {
+        return new Promise((resolve, reject) => {
+            fs.writeFile(filePath, data, options, (error) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(null);
+                }
+            });
+        });
     }
 }

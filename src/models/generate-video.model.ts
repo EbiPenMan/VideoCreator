@@ -104,6 +104,25 @@ export class SlideData {
     description: 'text Align',
   })
   textAlign: 'start' | 'end'| 'left'| 'center'| 'right';
+
+
+    @ApiProperty({
+      type: String,
+      description: 'speaker_id',
+    })
+    speaker_id: string;
+
+    @ApiProperty({
+      type: String,
+      description: 'style_wav',
+    })
+    style_wav: string;
+
+    @ApiProperty({
+      type: String,
+      description: 'language_id',
+    })
+    language_id: string;
 }
 
 export class TextStringData {
